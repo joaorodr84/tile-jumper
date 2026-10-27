@@ -3,7 +3,7 @@ const boardEl = $('board');
 let settings = Settings.load();
 let progress = Progress.load();
 let game, levelIndex = 0, tip = null;
-let cellEls = [], wasp = null;
+let cellEls = [], roo = null, face = { dir: 'down', left: false };
 
 function loadLevel(n) {
   levelIndex = Math.max(0, Math.min(LEVELS.length - 1, n));
@@ -11,6 +11,7 @@ function loadLevel(n) {
   Progress.save(progress);
   game = new Game(LEVELS[levelIndex], settings);
   tip = null;
+  face = { dir: 'down', left: false };
   build();
 }
 
@@ -36,10 +37,12 @@ function build() {
     boardEl.appendChild(el);
     cellEls.push(el);
   }
-  wasp = document.createElement('div');
-  wasp.id = 'wasp';
-  wasp.innerHTML = '<span class="shadow"></span><span class="body"></span><span class="eye l"></span><span class="eye r"></span>';
-  boardEl.appendChild(wasp);
+  roo = document.createElement('div');
+  roo.id = 'roo';
+  const sprite = name => ROO[name].replace('<svg', `<svg class="${name}"`);
+  roo.innerHTML = '<span class="shadow"></span><span class="hopper"><span class="flip">' +
+    sprite('side') + sprite('front') + sprite('back') + '</span></span>';
+  boardEl.appendChild(roo);
   render(false);
 }
 
@@ -61,11 +64,13 @@ function render(hop = true) {
     el.className = 'cell' + (t && settings.hints ? ' hint' + (t.jump ? ' jump' : '') : '') + (i === tipI ? ' tip' : '');
   });
   const p = cellPos(game.x, game.y);
-  wasp.style.transform = `translate(${p.x}%, ${p.y}%)`;
-  if (hop && settings.anim && wasp.animate) {
-    wasp.firstElementChild.nextElementSibling.animate(
-      [{ transform: 'translateY(0)' }, { transform: 'translateY(-35%)' }, { transform: 'translateY(0)' }],
-      { duration: 220, easing: 'ease-out' });
+  roo.style.transform = `translate(${p.x}%, ${p.y}%)`;
+  roo.dataset.face = face.dir === 'up' ? 'back' : face.dir === 'down' ? 'front' : 'side';
+  roo.querySelector('.flip').classList.toggle('left', face.left);
+  if (hop && settings.anim && roo.animate) {
+    roo.querySelector('.hopper').animate(
+      [{ transform: 'translateY(0)' }, { transform: 'translateY(-40%)' }, { transform: 'translateY(0)' }],
+      { duration: 240, easing: 'ease-out' });
   }
 
   const left = game.remaining();
@@ -106,6 +111,9 @@ function renderLevels() {
 function move(m) {
   if (game.won || !m) return;
   tip = null;
+  const dx = m.x - game.x, dy = m.y - game.y;
+  if (Math.abs(dx) >= Math.abs(dy) && dx) face = { dir: 'side', left: dx < 0 };
+  else face = { dir: dy < 0 ? 'up' : 'down', left: false };
   game.play(m);
   if (game.won && !progress.done.includes(levelIndex)) {
     progress.done.push(levelIndex);
