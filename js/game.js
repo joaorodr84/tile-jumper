@@ -101,12 +101,14 @@ class Game {
   }
 
   // Number of solutions from the start, each subtree capped at `cap`.
-  countSolutions(cap = 2) {
+  // Gives up and returns -1 after `budget` distinct positions.
+  countSolutions(cap = 2, budget = Infinity) {
     const memo = new Map();
     const rec = (cells, pos) => {
       if (this.remaining(cells) === 0) return 1;
       const k = pos + ':' + cells.join('');
       if (memo.has(k)) return memo.get(k);
+      if (memo.size > budget) return 0;
       let n = 0;
       for (const m of this.legalMoves(cells, pos)) {
         const next = Uint8Array.from(cells), i = m.y * this.w + m.x;
@@ -119,7 +121,8 @@ class Game {
     };
     const first = Uint8Array.from(this.max);
     first[this.start] -= 1;
-    return rec(first, this.start);
+    const n = rec(first, this.start);
+    return memo.size > budget ? -1 : n;
   }
 }
 
