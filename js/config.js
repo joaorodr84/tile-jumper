@@ -1,0 +1,33 @@
+// Settings, saved in localStorage. Rules live here so the UI never hard-codes them.
+const DEFAULT_SETTINGS = {
+  theme: 'cosmos',
+  jumps: true,   // rule option: allow jumping two tiles in a straight line
+  hints: true,   // highlight the tiles you can move to
+  anim: true,
+};
+
+const Settings = {
+  key: 'tilejumper.settings',
+  load() {
+    try {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(this.key) || '{}') };
+    } catch { return { ...DEFAULT_SETTINGS }; }
+  },
+  save(s) {
+    try { localStorage.setItem(this.key, JSON.stringify(s)); } catch {}
+  },
+};
+
+// Which levels have been cleared, and the level to resume.
+const Progress = {
+  key: 'tilejumper.progress',
+  load() {
+    try {
+      const p = JSON.parse(localStorage.getItem(this.key) || '{}');
+      return { done: Array.isArray(p.done) ? p.done : [], level: +p.level || 0 };
+    } catch { return { done: [], level: 0 }; }
+  },
+  save(p) {
+    try { localStorage.setItem(this.key, JSON.stringify(p)); } catch {}
+  },
+};

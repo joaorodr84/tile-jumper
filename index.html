@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tile Jumper</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tile Jumper</h1>
+    <p id="status" role="status"></p>
+  </header>
+
+  <div id="board-wrap">
+    <div id="board" role="grid" aria-label="Tabuleiro"></div>
+  </div>
+
+  <div class="toolbar">
+    <button id="prev" title="Nível anterior">‹</button>
+    <button id="undo" title="Desfazer (Z)">Desfazer</button>
+    <button id="reset" title="Reiniciar (R)">Reiniciar</button>
+    <button id="hint" title="Dica (H)">Dica</button>
+    <button id="next" title="Próximo nível (N)">›</button>
+  </div>
+  <div class="toolbar">
+    <button id="toggle-levels">Níveis</button>
+    <button id="toggle-help">Regras</button>
+    <button id="toggle-settings">Definições</button>
+  </div>
+
+  <aside id="levels" hidden>
+    <h2>Níveis</h2>
+    <div id="level-grid"></div>
+  </aside>
+
+  <aside id="help" hidden>
+    <h2>Regras</h2>
+    <p>Pisa todas as casas para limpar o nível. Começas na casa marcada com a vespa.</p>
+    <ul>
+      <li><strong>Passo:</strong> move-te uma casa para cima, baixo, esquerda ou direita.</li>
+      <li><strong>Salto:</strong> duas casas em linha reta, por cima de um buraco ou de outra casa.</li>
+      <li>Só podes cair numa casa que ainda não foi usada. Ao saíres de uma casa, ela desaparece.</li>
+      <li><strong>Casas duplas</strong> (douradas) têm de ser pisadas duas vezes: racham à primeira e desaparecem à segunda.</li>
+      <li>Se ficares sem jogadas, desfaz ou reinicia.</li>
+    </ul>
+    <p class="note">Teclas: setas ou WASD para passos, Shift + seta para saltar, Z desfaz, R reinicia, H dá uma dica, N avança. Também podes tocar numa casa.</p>
+  </aside>
+
+  <aside id="settings" hidden>
+    <h2>Definições</h2>
+    <label>Tema
+      <select id="s-theme">
+        <option value="cosmos">Cosmos</option>
+        <option value="sand">Areia</option>
+        <option value="ice">Gelo</option>
+        <option value="classic">Clássico</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="s-jumps"> Saltos de duas casas</label>
+    <label class="check"><input type="checkbox" id="s-hints"> Destacar jogadas possíveis</label>
+    <label class="check"><input type="checkbox" id="s-anim"> Animações</label>
+    <button id="clear-progress">Apagar progresso</button>
+  </aside>
+</main>
+<script src="js/config.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
