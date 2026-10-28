@@ -6,11 +6,15 @@ const DEFAULT_SETTINGS = {
   anim: true,
 };
 
+const THEMES = ['cosmos', 'space', 'sand', 'ice', 'classic'];
+
 const Settings = {
   key: 'tilejumper.settings',
   load() {
     try {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(this.key) || '{}') };
+      const s = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(this.key) || '{}') };
+      if (!THEMES.includes(s.theme)) s.theme = DEFAULT_SETTINGS.theme; // e.g. a theme that was renamed
+      return s;
     } catch { return { ...DEFAULT_SETTINGS }; }
   },
   save(s) {
