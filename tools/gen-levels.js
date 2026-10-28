@@ -1,114 +1,138 @@
-// Generates js/levels.js: node tools/gen-levels.js
-// Each level is a random walk of legal moves, so it is solvable by construction.
-// Among many candidates we keep the one with the fewest distinct solutions.
+#!/usr/bin/env node
+// Builds js/levels.js from the plan in tools/level-plan.js. Plain Node, no dependencies.
+//
+//   node tools/gen-levels.js                add any levels missing from js/levels.js
+//   node tools/gen-levels.js --regenerate   rebuild every level from scratch
+//   node tools/gen-levels.js --level 12     print level 12 (1-based) and write nothing
+//
+// Options:
+//   --levels N        how many levels to have in total          (default: the whole plan)
+//   --jobs N          levels generated in parallel              (default: CPU count)
+//   --seed N          base random seed, level n uses N + n - 1  (default: 1000)
+//   --attempts N      candidates per level, overrides the plan  (default: per level, see the plan)
+//   --solution-cap N  count solutions up to this many           (default: 30)
+//   --budget N        positions to analyse per candidate        (default: 300000)
+//   --out FILE        where to write                            (default: js/levels.js)
+//   --help
+//
+// Each level is generated from its own seed, so levels never depend on each other
+// and the same options always give the same file. Larger levels take minutes:
+// the time is spent counting each candidate's solutions.
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { Game } = require('../js/game.js');
+const { spawn } = require('child_process');
+const { PLAN } = require('./level-plan.js');
+const { generateLevel, verifyLevel } = require('./level-generator.js');
 
-function rng(seed) { // mulberry32
-  return () => {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+const DEFAULTS = {
+  levels: PLAN.length, jobs: os.cpus().length, seed: 1000, attempts: 0,
+  solutionCap: 30, budget: 300000, out: path.join(__dirname, '../js/levels.js'),
+};
+
+function parseArgs(argv) {
+  const opts = { ...DEFAULTS, regenerate: false, level: 0 };
+  const number = (name, v) => {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 0) fail(`${name} needs a whole number, got "${v}"`);
+    return n;
   };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i], next = () => argv[++i];
+    if (a === '--help' || a === '-h') { printHelp(); process.exit(0); }
+    else if (a === '--regenerate') opts.regenerate = true;
+    else if (a === '--levels') opts.levels = number(a, next());
+    else if (a === '--jobs') opts.jobs = Math.max(1, number(a, next()));
+    else if (a === '--seed') opts.seed = number(a, next());
+    else if (a === '--attempts') opts.attempts = number(a, next());
+    else if (a === '--solution-cap') opts.solutionCap = Math.max(1, number(a, next()));
+    else if (a === '--budget') opts.budget = Math.max(1, number(a, next()));
+    else if (a === '--level') opts.level = number(a, next());
+    else if (a === '--out') opts.out = path.resolve(next() || fail('--out needs a file'));
+    else if (a === '--worker') opts.worker = true; // internal: print one level as JSON
+    else fail(`unknown option ${a} (try --help)`);
+  }
+  if (opts.levels > PLAN.length) fail(`the plan has ${PLAN.length} levels; add rows to tools/level-plan.js first`);
+  if (opts.level > PLAN.length) fail(`the plan has ${PLAN.length} levels`);
+  return opts;
 }
 
-// width, height, walk length, max double tiles, chance of a jump per move
-const PLAN = [
-  [3, 3, 6, 0, 0], [4, 3, 7, 0, 0], [4, 4, 9, 0, .2], [4, 4, 10, 0, .3], [5, 4, 11, 0, .3],
-  [5, 4, 12, 1, .3], [5, 5, 13, 1, .3], [5, 5, 14, 2, .3], [6, 5, 15, 2, .3], [6, 5, 16, 2, .3],
-  [6, 6, 17, 3, .3], [6, 6, 18, 3, .3], [7, 6, 19, 3, .3], [7, 6, 20, 4, .3], [7, 7, 21, 4, .3],
-  [7, 7, 22, 4, .3], [8, 7, 23, 5, .3], [8, 7, 24, 5, .3], [8, 8, 25, 5, .3], [8, 8, 26, 6, .3],
-  [8, 8, 27, 6, .3], [9, 8, 28, 6, .3], [9, 8, 29, 7, .3], [9, 8, 30, 7, .3], [9, 9, 31, 7, .3],
-  [9, 9, 32, 7, .3], [9, 9, 33, 8, .3], [9, 9, 34, 8, .3], [10, 9, 35, 8, .3], [10, 9, 36, 8, .3],
-  [10, 9, 37, 9, .3], [10, 9, 38, 9, .3], [10, 10, 39, 9, .3], [10, 10, 40, 9, .3], [10, 10, 41, 10, .3],
-  [10, 10, 42, 10, .3], [10, 10, 43, 10, .3], [10, 10, 44, 10, .3], [10, 10, 45, 11, .3], [10, 10, 46, 11, .3],
-  [10, 10, 47, 11, .3], [10, 10, 48, 12, .3], [10, 10, 49, 12, .3], [10, 10, 50, 12, .3], [10, 10, 52, 13, .3],
-  [10, 10, 54, 13, .3], [10, 10, 55, 14, .3], [10, 10, 56, 14, .3], [10, 10, 58, 14, .3],
-  [10, 10, 60, 15, .3],
-];
+function fail(msg) { console.error(msg); process.exit(1); }
 
-function walk(w, h, len, maxDouble, pJump, rand) {
-  const visits = new Map();
-  let x = (rand() * w) | 0, y = (rand() * h) | 0;
-  const start = y * w + x;
-  visits.set(start, 1);
-  let doubles = 0;
-  for (let n = 1; n < len; n++) {
-    const opts = [];
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      for (const d of [1, 2]) {
-        const nx = x + dx * d, ny = y + dy * d, i = ny * w + nx;
-        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-        const v = visits.get(i) || 0;
-        if (v >= 2 || (v === 1 && doubles >= maxDouble)) continue;
-        // a jump is rarer; a step onto a used tile is rarer than onto a new one
-        opts.push({ nx, ny, i, wt: (d === 2 ? pJump : 1 - pJump) * (v ? .35 : 1) });
-      }
-    }
-    if (!opts.length) return null;
-    let r = rand() * opts.reduce((s, o) => s + o.wt, 0), pick = opts[0];
-    for (const o of opts) { if ((r -= o.wt) <= 0) { pick = o; break; } }
-    if (visits.get(pick.i) === 1) doubles++;
-    visits.set(pick.i, (visits.get(pick.i) || 0) + 1);
-    x = pick.nx; y = pick.ny;
-  }
-  const rows = [];
-  for (let yy = 0; yy < h; yy++) {
-    let row = '';
-    for (let xx = 0; xx < w; xx++) {
-      const v = visits.get(yy * w + xx) || 0, s = yy * w + xx === start;
-      row += !v ? '.' : s ? (v === 2 ? 's' : 'S') : String(v);
-    }
-    rows.push(row);
-  }
-  return rows;
+function printHelp() {
+  const src = fs.readFileSync(__filename, 'utf8').split('\n');
+  console.log(src.slice(2, src.findIndex((l, i) => i > 2 && !l.startsWith('//'))).map(l => l.replace(/^\/\/ ?/, '')).join('\n'));
 }
 
-function makeLevel(n) {
-  const [w, h, len, dbl, pj] = PLAN[n];
-  const rand = rng(1000 + n);
-  let best = null;
-  for (let t = 0; t < (n < 20 ? 400 : 150); t++) {
-    const rows = walk(w, h, len, dbl, pj, rand);
-    if (!rows) continue;
-    const g = new Game(rows);
-    const sols = g.countSolutions(30, 300000);
-    if (sols < 1) continue; // none, or too big to judge
-    const score = sols * 100 - g.max.filter(Boolean).length;
-    if (!best || score < best.score) best = { rows, score, sols };
-  }
-  return best;
-}
-
-// node tools/gen-levels.js            adds any missing levels to js/levels.js (4 in parallel)
-// node tools/gen-levels.js --level N  prints level N (0-based) as JSON
-if (process.argv[2] === '--level') {
-  process.stdout.write(JSON.stringify(makeLevel(+process.argv[3])));
-} else {
-  const file = path.join(__dirname, '../js/levels.js');
-  const { LEVELS } = require(file);
-  const levels = LEVELS.slice();
-  const todo = [];
-  for (let n = levels.length; n < PLAN.length; n++) todo.push(n);
-  const { spawn } = require('child_process');
-  const run = n => new Promise((resolve, reject) => {
-    let out = '';
-    const c = spawn(process.execPath, [__filename, '--level', n]);
-    c.stdout.on('data', d => out += d);
-    c.on('close', code => code ? reject(new Error('level ' + (n + 1) + ' failed')) : resolve(JSON.parse(out)));
+// Level n is 1-based. Pure function of the options, so any process can compute it.
+function make(n, opts) {
+  const spec = PLAN[n - 1];
+  const level = generateLevel(spec, {
+    seed: opts.seed + n - 1,
+    attempts: opts.attempts || spec.attempts,
+    solutionCap: opts.solutionCap,
+    budget: opts.budget,
   });
-  (async () => {
-    const workers = Array.from({ length: 4 }, async () => {
-      while (todo.length) {
-        const n = todo.shift(), best = await run(n);
-        levels[n] = best.rows;
-        console.log(`level ${n + 1}: ${PLAN[n][0]}x${PLAN[n][1]}, ${best.sols} solution(s)`);
-      }
-    });
-    await Promise.all(workers);
-    fs.writeFileSync(file, '// Generated by tools/gen-levels.js. Do not edit by hand.\nconst LEVELS = [\n' +
-      levels.map(l => '  ' + JSON.stringify(l)).join(',\n') + '\n];\n\nif (typeof module !== \'undefined\') module.exports = { LEVELS };\n');
-  })();
+  if (!level) throw new Error(`level ${n}: no candidate could be analysed; raise --budget or lower the plan's steps`);
+  return level;
 }
+
+// Each level runs in its own process so several can use several CPU cores.
+function makeInChild(n, opts) {
+  return new Promise((resolve, reject) => {
+    const args = [__filename, '--worker', '--level', n, '--seed', opts.seed, '--solution-cap', opts.solutionCap,
+      '--budget', opts.budget, '--attempts', opts.attempts];
+    const child = spawn(process.execPath, args);
+    let out = '', err = '';
+    child.stdout.on('data', d => out += d);
+    child.stderr.on('data', d => err += d);
+    child.on('close', code => code ? reject(new Error(err.trim() || `level ${n} failed`)) : resolve(JSON.parse(out)));
+  });
+}
+
+function existingLevels(file) {
+  try { return require(file).LEVELS.slice(); } catch { return []; }
+}
+
+function writeLevels(file, levels) {
+  const text = '// Generated by tools/gen-levels.js. Do not edit by hand.\nconst LEVELS = [\n' +
+    levels.map(l => '  ' + JSON.stringify(l)).join(',\n') +
+    '\n];\n\nif (typeof module !== \'undefined\') module.exports = { LEVELS };\n';
+  fs.writeFileSync(file, text);
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+
+  if (opts.worker) { process.stdout.write(JSON.stringify(make(opts.level, opts))); return; }
+  if (opts.level) {
+    const level = make(opts.level, opts);
+    console.log(level.rows.join('\n') + `\n(${level.solutions}${level.solutions >= opts.solutionCap ? '+' : ''} solution(s))`);
+    return;
+  }
+
+  const levels = opts.regenerate ? [] : existingLevels(opts.out).slice(0, opts.levels);
+  const todo = [];
+  for (let n = levels.length + 1; n <= opts.levels; n++) todo.push(n);
+  if (!todo.length) { console.log(`Nothing to do: ${levels.length} levels already in ${path.relative('.', opts.out)}.`); return; }
+  console.log(`Generating ${todo.length} level(s), ${Math.min(opts.jobs, todo.length)} at a time. This can take a while.`);
+
+  const started = Date.now();
+  const worker = async () => {
+    while (todo.length) {
+      const n = todo.shift(), level = await makeInChild(n, opts);
+      levels[n - 1] = level.rows;
+      const spec = PLAN[n - 1];
+      console.log(`level ${n}: ${spec.width}x${spec.height}, ${level.solutions}${level.solutions >= opts.solutionCap ? '+' : ''} solution(s)`);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(opts.jobs, todo.length) }, worker));
+
+  levels.forEach((rows, i) => {
+    try { verifyLevel(rows); } catch (e) { fail(`level ${i + 1} failed verification: ${e.message}`); }
+  });
+  writeLevels(opts.out, levels);
+  console.log(`Wrote ${levels.length} levels to ${path.relative('.', opts.out)} in ${Math.round((Date.now() - started) / 1000)}s.`);
+}
+
+main().catch(e => fail(e.message));
