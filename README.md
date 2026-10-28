@@ -36,3 +36,4 @@ To change the difficulty curve, edit the table in `tools/level-plan.js` (grid si
 - `tools/level-generator.js` – the generation algorithm (no file handling)
 - `tools/gen-levels.js` – command-line tool that writes `js/levels.js`
 - `tools/test.js` – rules and level checks
+- `docs/tile-ideas.md` – ideas for new tile types (not implemented)
