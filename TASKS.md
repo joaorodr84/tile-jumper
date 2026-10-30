@@ -3,7 +3,7 @@
 Every task carries an ID of the form `TILE-JUMPER-<n>`. IDs are assigned
 once, never reused, and never renumbered.
 
-**Next ID to assign: `TILE-JUMPER-7`**
+**Next ID to assign: `TILE-JUMPER-8`**
 
 If this file and history ever disagree, history wins:
 
@@ -23,6 +23,7 @@ kangaroo sprite) predate the task-ID system and carry no ID; see `git log`.
 | TILE-JUMPER-4 | P3 | Play a sound effect on finishing a level | open | — |
 | TILE-JUMPER-5 | P3 | Play a sound effect on falling. Depends on `TILE-JUMPER-3` — there's nothing to cue a sound off until falling itself exists | open | — |
 | TILE-JUMPER-6 | P3 | Redo the main character's art, and draw a small joey riding inside the pouch | open | — |
+| TILE-JUMPER-7 | P4 | Design a logo for Tile Jumper — unscoped: where it's used (title screen, favicon, README) and style aren't decided yet | open | — |
 
 ## Done
 

@@ -35,3 +35,6 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
   that exists.
 - [P3] `TILE-JUMPER-6` — Redo the main character's art, and draw a small
   joey riding inside the pouch.
+- [P4] `TILE-JUMPER-7` — Design a logo for Tile Jumper. Unscoped: where it
+  would be used (title screen, favicon, README) and the style aren't
+  decided yet.
