@@ -30,3 +30,6 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
   handler vs. keydown handler), so this is the one case that breaks that
   pattern and needs its own empty-space hit-testing.
 - [P3] `TILE-JUMPER-4` — Play a sound effect on finishing a level.
+- [P3] `TILE-JUMPER-5` — Play a sound effect on falling. Depends on
+  `TILE-JUMPER-3` landing first — there's no fall to cue the sound off until
+  that exists.
