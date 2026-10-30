@@ -22,3 +22,9 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
 ## Backlog
 
 - [P3] `TILE-JUMPER-2` — Play a sound effect on a jump.
+- [P3] `TILE-JUMPER-3` — Add falling: pressing a direction (arrow keys / WASD)
+  with no step or jump that way falls instead of doing nothing. Keyboard/WASD
+  only, by design decision — click/tap targets a specific legal destination
+  cell and carries no direction signal, so it has no fall trigger. (See
+  [js/ui.js](js/ui.js) click handler vs. keydown handler for why the two
+  input modes differ.)
