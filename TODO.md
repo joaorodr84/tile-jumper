@@ -29,3 +29,4 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
   targets a specific legal destination cell (see [js/ui.js](js/ui.js) click
   handler vs. keydown handler), so this is the one case that breaks that
   pattern and needs its own empty-space hit-testing.
+- [P3] `TILE-JUMPER-4` — Play a sound effect on finishing a level.

@@ -3,7 +3,7 @@
 Every task carries an ID of the form `TILE-JUMPER-<n>`. IDs are assigned
 once, never reused, and never renumbered.
 
-**Next ID to assign: `TILE-JUMPER-4`**
+**Next ID to assign: `TILE-JUMPER-5`**
 
 If this file and history ever disagree, history wins:
 
@@ -20,6 +20,7 @@ kangaroo sprite) predate the task-ID system and carry no ID; see `git log`.
 | --- | --- | --- | --- | --- |
 | TILE-JUMPER-2 | P3 | Play a sound effect on a jump | open | — |
 | TILE-JUMPER-3 | P3 | Add falling, as an opt-in setting (off by default): pressing a direction (arrow keys / WASD) with no step or jump that way falls instead of doing nothing. When the setting is on, falling is also reachable by clicking/tapping empty space — the one case where click/tap stops being purely destination-based | open | — |
+| TILE-JUMPER-4 | P3 | Play a sound effect on finishing a level | open | — |
 
 ## Done
 
