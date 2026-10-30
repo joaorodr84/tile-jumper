@@ -3,7 +3,7 @@
 Every task carries an ID of the form `TILE-JUMPER-<n>`. IDs are assigned
 once, never reused, and never renumbered.
 
-**Next ID to assign: `TILE-JUMPER-2`**
+**Next ID to assign: `TILE-JUMPER-3`**
 
 If this file and history ever disagree, history wins:
 
@@ -18,6 +18,7 @@ kangaroo sprite) predate the task-ID system and carry no ID; see `git log`.
 
 | ID | Pri | Task | Status | Commit |
 | --- | --- | --- | --- | --- |
+| TILE-JUMPER-2 | P3 | Play a sound effect on a jump | open | — |
 
 ## Done
 

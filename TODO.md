@@ -21,4 +21,4 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
 
 ## Backlog
 
-Empty — nothing queued yet.
+- [P3] `TILE-JUMPER-2` — Play a sound effect on a jump.
