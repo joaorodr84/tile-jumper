@@ -33,3 +33,5 @@ The priority can change at any time; the `TILE-JUMPER-<n>` ID never does.
 - [P3] `TILE-JUMPER-5` — Play a sound effect on falling. Depends on
   `TILE-JUMPER-3` landing first — there's no fall to cue the sound off until
   that exists.
+- [P3] `TILE-JUMPER-6` — Redo the main character's art, and draw a small
+  joey riding inside the pouch.
