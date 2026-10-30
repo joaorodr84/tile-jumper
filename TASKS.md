@@ -19,7 +19,7 @@ kangaroo sprite) predate the task-ID system and carry no ID; see `git log`.
 | ID | Pri | Task | Status | Commit |
 | --- | --- | --- | --- | --- |
 | TILE-JUMPER-2 | P3 | Play a sound effect on a jump | open | — |
-| TILE-JUMPER-3 | P3 | Add falling: pressing a direction (arrow keys / WASD) with no step or jump that way falls instead of doing nothing. Keyboard/WASD only — click/tap targets a specific legal destination cell and carries no direction signal, so it has no fall trigger under the current input design | open | — |
+| TILE-JUMPER-3 | P3 | Add falling, as an opt-in setting (off by default): pressing a direction (arrow keys / WASD) with no step or jump that way falls instead of doing nothing. When the setting is on, falling is also reachable by clicking/tapping empty space — the one case where click/tap stops being purely destination-based | open | — |
 
 ## Done
 
